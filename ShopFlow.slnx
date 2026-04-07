@@ -1,0 +1,40 @@
+<Solution>
+  <Folder Name="/src/" />
+  <Folder Name="/src/Gateway/">
+    <Project Path="src/Gateway/ShopFlow.ApiGateway/ShopFlow.ApiGateway.csproj" />
+  </Folder>
+  <Folder Name="/src/Services/" />
+  <Folder Name="/src/Services/ShopFlow.InventoryService/">
+    <Project Path="src/Services/ShopFlow.InventoryService/ShopFlow.InventoryService.API/ShopFlow.InventoryService.API.csproj" />
+    <Project Path="src/Services/ShopFlow.InventoryService/ShopFlow.InventoryService.Application/ShopFlow.InventoryService.Application.csproj" />
+    <Project Path="src/Services/ShopFlow.InventoryService/ShopFlow.InventoryService.Domain/ShopFlow.InventoryService.Domain.csproj" />
+    <Project Path="src/Services/ShopFlow.InventoryService/ShopFlow.InventoryService.Infrastructure/ShopFlow.InventoryService.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/src/Services/ShopFlow.NotificationService/">
+    <Project Path="src/Services/ShopFlow.NotificationService/ShopFlow.NotificationService.API/ShopFlow.NotificationService.API.csproj" />
+    <Project Path="src/Services/ShopFlow.NotificationService/ShopFlow.NotificationService.Application/ShopFlow.NotificationService.Application.csproj" />
+    <Project Path="src/Services/ShopFlow.NotificationService/ShopFlow.NotificationService.Domain/ShopFlow.NotificationService.Domain.csproj" />
+    <Project Path="src/Services/ShopFlow.NotificationService/ShopFlow.NotificationService.Infrastructure/ShopFlow.NotificationService.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/src/Services/ShopFlow.OrderService/">
+    <Project Path="src/Services/ShopFlow.OrderService/ShopFlow.OrderService.API/ShopFlow.OrderService.API.csproj" />
+    <Project Path="src/Services/ShopFlow.OrderService/ShopFlow.OrderService.Application/ShopFlow.OrderService.Application.csproj" />
+    <Project Path="src/Services/ShopFlow.OrderService/ShopFlow.OrderService.Domain/ShopFlow.OrderService.Domain.csproj" />
+    <Project Path="src/Services/ShopFlow.OrderService/ShopFlow.OrderService.Infrastructure/ShopFlow.OrderService.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/src/Services/ShopFlow.PaymentService/">
+    <Project Path="src/Services/ShopFlow.PaymentService/ShopFlow.PaymentService.API/ShopFlow.PaymentService.API.csproj" />
+    <Project Path="src/Services/ShopFlow.PaymentService/ShopFlow.PaymentService.Application/ShopFlow.PaymentService.Application.csproj" />
+    <Project Path="src/Services/ShopFlow.PaymentService/ShopFlow.PaymentService.Domain/ShopFlow.PaymentService.Domain.csproj" />
+    <Project Path="src/Services/ShopFlow.PaymentService/ShopFlow.PaymentService.Infrastructure/ShopFlow.PaymentService.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/src/Shared/">
+    <Project Path="src/Shared/ShopFlow.Contracts/ShopFlow.Contracts.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/ShopFlow.InventoryService.Tests/ShopFlow.InventoryService.Tests.csproj" />
+    <Project Path="tests/ShopFlow.NotificationService.Tests/ShopFlow.NotificationService.Tests.csproj" />
+    <Project Path="tests/ShopFlow.OrderService.Tests/ShopFlow.OrderService.Tests.csproj" />
+    <Project Path="tests/ShopFlow.PaymentService.Tests/ShopFlow.PaymentService.Tests.csproj" />
+  </Folder>
+</Solution>

@@ -1,0 +1,18 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\Shared\ShopFlow.Contracts\ShopFlow.Contracts.csproj" />
+    <ProjectReference Include="..\ShopFlow.OrderService.Domain\ShopFlow.OrderService.Domain.csproj" />
+  </ItemGroup>
+
+</Project>
