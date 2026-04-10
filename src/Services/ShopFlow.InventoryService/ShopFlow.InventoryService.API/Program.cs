@@ -1,12 +1,12 @@
 using Microsoft.EntityFrameworkCore;
-using ShopFlow.NotificationService.Infrastructure.Persistence;
+using ShopFlow.InventoryService.Infrastructure.Persistence;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddDbContext<NotificationDbContext>(options =>
+builder.Services.AddDbContext<InventoryDbContext>(options =>
     options.UseSqlServer(
         builder.Configuration.GetConnectionString("DefaultConnection"),
-        b => b.MigrationsAssembly("ShopFlow.NotificationService.Infrastructure")));
+        b => b.MigrationsAssembly("ShopFlow.InventoryService.Infrastructure")));
 
 builder.Services.AddControllers();
 
