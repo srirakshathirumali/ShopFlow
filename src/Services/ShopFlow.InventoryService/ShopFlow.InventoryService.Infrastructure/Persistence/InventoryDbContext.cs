@@ -58,8 +58,7 @@ public class InventoryDbContext : DbContext
         });
     }
 
-    public override Task<int> SaveChangesAsync(
-        CancellationToken cancellationToken = default)
+    public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
         foreach (var entry in ChangeTracker.Entries<BaseEntity>())
         {

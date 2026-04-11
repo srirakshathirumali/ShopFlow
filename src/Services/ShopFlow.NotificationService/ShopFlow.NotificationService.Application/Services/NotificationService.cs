@@ -16,11 +16,7 @@ public class NotificationService : INotificationService
         _notificationRepository = notificationRepository;
     }
 
-    public async Task SendNotificationAsync(
-        Guid orderId,
-        Guid customerId,
-        NotificationType type,
-        string message)
+    public async Task SendNotificationAsync(Guid orderId,Guid customerId,NotificationType type,string message)
     {
         var notification = new Notification
         {
@@ -35,8 +31,7 @@ public class NotificationService : INotificationService
         await _notificationRepository.AddAsync(notification);
     }
 
-    public async Task<IEnumerable<NotificationResponseDto>> GetByOrderIdAsync(
-        Guid orderId)
+    public async Task<IEnumerable<NotificationResponseDto>> GetNotificationsByOrderAsync(Guid orderId)
     {
         var notifications = await _notificationRepository
             .GetByOrderIdAsync(orderId);

@@ -13,15 +13,13 @@ public class StockReservationRepository : IStockReservationRepository
         _context = context;
     }
 
-    public async Task<IEnumerable<StockReservation>> GetByOrderIdAsync(
-        Guid orderId) =>
+    public async Task<IEnumerable<StockReservation>> GetByOrderIdAsync(Guid orderId) =>
         await _context.StockReservations
             .Include(r => r.Product)
             .Where(r => r.OrderId == orderId)
             .ToListAsync();
 
-    public async Task AddRangeAsync(
-        IEnumerable<StockReservation> reservations)
+    public async Task AddRangeAsync(IEnumerable<StockReservation> reservations)
     {
         foreach (var reservation in reservations)
             reservation.Id = Guid.NewGuid();
@@ -30,8 +28,7 @@ public class StockReservationRepository : IStockReservationRepository
         await _context.SaveChangesAsync();
     }
 
-    public async Task UpdateRangeAsync(
-        IEnumerable<StockReservation> reservations)
+    public async Task UpdateRangeAsync(IEnumerable<StockReservation> reservations)
     {
         _context.StockReservations.UpdateRange(reservations);
         await _context.SaveChangesAsync();

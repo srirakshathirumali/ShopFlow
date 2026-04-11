@@ -20,8 +20,7 @@ public class InventoryService : IInventoryService
         _reservationRepository = reservationRepository;
     }
 
-    public async Task<ProductResponseDto> CreateProductAsync(
-        CreateProductRequestDto request)
+    public async Task<ProductResponseDto> CreateProductAsync(CreateProductRequestDto request)
     {
         var product = new Product
         {
@@ -126,4 +125,18 @@ public class InventoryService : IInventoryService
             AvailableQuantity = product.AvailableQuantity,
             Price = product.Price
         };
+
+    public async Task<ProductResponseDto> UpdateStockAsync(Guid productId, int quantity)
+    {
+        var product = await _productRepository.GetByIdAsync(productId)
+            ?? throw new ProductNotFoundException(productId);
+
+        if (quantity < 0)
+            throw new ArgumentException(
+                "Stock quantity cannot be negative.");
+
+        product.StockQuantity = quantity;
+        await _productRepository.UpdateAsync(product);
+        return MapToDto(product);
+    }
 }

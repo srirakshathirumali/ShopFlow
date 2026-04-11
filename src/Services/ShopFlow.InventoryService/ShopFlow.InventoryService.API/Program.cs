@@ -1,3 +1,5 @@
+using Scalar.AspNetCore;
+using ShopFlow.InventoryService.API.Middleware;
 using ShopFlow.InventoryService.Application;
 using ShopFlow.InventoryService.Infrastructure;
 
@@ -14,8 +16,12 @@ var app = builder.Build();
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
+    app.MapScalarApiReference(options =>
+    {
+        options.Title = "ShopFlow InventoryService";  
+    });
 }
-
+app.UseMiddleware<GlobalExceptionMiddleware>();
 app.UseHttpsRedirection();
 app.UseAuthorization();
 app.MapControllers();

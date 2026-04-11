@@ -8,4 +8,5 @@ public interface IOrderService
     Task<OrderResponseDto> GetOrderByIdAsync(Guid orderId);
     Task<IEnumerable<OrderResponseDto>> GetOrdersByCustomerAsync(Guid customerId);
     Task UpdateOrderStatusAsync(Guid orderId, Domain.Enums.OrderStatus status, string? reason = null);
+    Task<OrderResponseDto> CancelOrderAsync(Guid orderId, string reason);
 }

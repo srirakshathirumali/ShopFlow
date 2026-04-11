@@ -16,8 +16,7 @@ public class OrderService : IOrderService
         _orderRepository = orderRepository;
     }
 
-    public async Task<OrderResponseDto> CreateOrderAsync(
-        CreateOrderRequestDto request)
+    public async Task<OrderResponseDto> CreateOrderAsync(CreateOrderRequestDto request)
     {
         var order = new Order
         {
@@ -46,17 +45,13 @@ public class OrderService : IOrderService
         return MapToDto(order);
     }
 
-    public async Task<IEnumerable<OrderResponseDto>> GetOrdersByCustomerAsync(
-        Guid customerId)
+    public async Task<IEnumerable<OrderResponseDto>> GetOrdersByCustomerAsync(Guid customerId)
     {
         var orders = await _orderRepository.GetByCustomerIdAsync(customerId);
         return orders.Select(MapToDto);
     }
 
-    public async Task UpdateOrderStatusAsync(
-        Guid orderId,
-        OrderStatus status,
-        string? reason = null)
+    public async Task UpdateOrderStatusAsync(Guid orderId,OrderStatus status,string? reason = null)
     {
         var order = await _orderRepository.GetByIdAsync(orderId)
             ?? throw new OrderNotFoundException(orderId);
@@ -67,6 +62,26 @@ public class OrderService : IOrderService
             order.CancellationReason = reason;
 
         await _orderRepository.UpdateAsync(order);
+    }
+
+    public async Task<OrderResponseDto> CancelOrderAsync(Guid orderId, string reason)
+    {
+        var order = await _orderRepository.GetByIdAsync(orderId)
+            ?? throw new OrderNotFoundException(orderId);
+
+        if (order.Status == OrderStatus.Confirmed)
+            throw new InvalidOrderStatusException(
+                "Cannot cancel a confirmed order.");
+
+        if (order.Status == OrderStatus.Cancelled)
+            throw new InvalidOrderStatusException(
+                "Order is already cancelled.");
+
+        order.Status = OrderStatus.Cancelled;
+        order.CancellationReason = reason;
+
+        await _orderRepository.UpdateAsync(order);
+        return MapToDto(order);
     }
 
     private static OrderResponseDto MapToDto(Order order) =>

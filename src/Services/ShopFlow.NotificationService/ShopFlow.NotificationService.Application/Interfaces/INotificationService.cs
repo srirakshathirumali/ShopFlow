@@ -5,12 +5,7 @@ namespace ShopFlow.NotificationService.Application.Interfaces;
 
 public interface INotificationService
 {
-    Task SendNotificationAsync(
-        Guid orderId,
-        Guid customerId,
-        NotificationType type,
-        string message);
+    Task SendNotificationAsync(Guid orderId,Guid customerId,NotificationType type,string message);
 
-    Task<IEnumerable<NotificationResponseDto>> GetByOrderIdAsync(
-        Guid orderId);
+    Task<IEnumerable<NotificationResponseDto>> GetNotificationsByOrderAsync(Guid orderId);
 }

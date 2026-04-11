@@ -8,11 +8,9 @@ namespace ShopFlow.InventoryService.Application;
 
 public static class DependencyInjection
 {
-    public static IServiceCollection AddApplication(
-        this IServiceCollection services)
+    public static IServiceCollection AddApplication(this IServiceCollection services)
     {
-        services.AddScoped<IInventoryService,
-            Services.InventoryService>();
+        services.AddScoped<IInventoryService,Services.InventoryService>();
 
         services.AddFluentValidationAutoValidation();
         services.AddValidatorsFromAssemblyContaining<CreateProductRequestValidator> ();

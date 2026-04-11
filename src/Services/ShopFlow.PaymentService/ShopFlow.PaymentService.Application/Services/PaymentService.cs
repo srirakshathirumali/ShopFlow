@@ -16,8 +16,7 @@ public class PaymentService : IPaymentService
         _paymentRepository = paymentRepository;
     }
 
-    public async Task<PaymentResponseDto> ProcessPaymentAsync(
-        ProcessPaymentRequestDto request)
+    public async Task<PaymentResponseDto> ProcessPaymentAsync(ProcessPaymentRequestDto request)
     {
         var existing = await _paymentRepository
             .GetByOrderIdAsync(request.OrderId);
@@ -46,8 +45,7 @@ public class PaymentService : IPaymentService
         return MapToDto(payment);
     }
 
-    public async Task<PaymentResponseDto> GetPaymentByOrderIdAsync(
-        Guid orderId)
+    public async Task<PaymentResponseDto> GetPaymentByOrderIdAsync(Guid orderId)
     {
         var payment = await _paymentRepository.GetByOrderIdAsync(orderId)
             ?? throw new PaymentNotFoundException(orderId);

@@ -1,3 +1,4 @@
+using Scalar.AspNetCore;
 using ShopFlow.NotificationService.Application;
 using ShopFlow.NotificationService.Infrastructure;
 
@@ -13,6 +14,10 @@ var app = builder.Build();
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
+    app.MapScalarApiReference(options =>
+    {
+        options.Title = "ShopFlow NotificationService";
+    });
 }
 
 app.UseHttpsRedirection();

@@ -8,11 +8,9 @@ namespace ShopFlow.PaymentService.Application;
 
 public static class DependencyInjection
 {
-    public static IServiceCollection AddApplication(
-        this IServiceCollection services)
+    public static IServiceCollection AddApplication(this IServiceCollection services)
     {
-        services.AddScoped<IPaymentService,
-            Services.PaymentService>();
+        services.AddScoped<IPaymentService,Services.PaymentService>();
 
         services.AddFluentValidationAutoValidation();
         services.AddValidatorsFromAssemblyContaining<ProcessPaymentRequestValidator> ();
