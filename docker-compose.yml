@@ -1,0 +1,178 @@
+﻿version: '3.8'
+
+services:
+
+  # ── RabbitMQ ──────────────────────────────────────────
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: shopflow-rabbitmq
+    ports:
+      - "5672:5672"     # AMQP port
+      - "15672:15672"   # Management UI
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    networks:
+      - shopflow-network
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── SQL Server instances ───────────────────────────────
+  sqlserver-orders:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: shopflow-sqlserver-orders
+    environment:
+      SA_PASSWORD: "ShopFlow@123"
+      ACCEPT_EULA: "Y"
+    ports:
+      - "1434:1433"
+    networks:
+      - shopflow-network
+    healthcheck:
+      test: ["CMD-SHELL",
+           "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P ShopFlow@123 -Q 'SELECT 1' -No || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  sqlserver-inventory:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: shopflow-sqlserver-inventory
+    environment:
+      SA_PASSWORD: "ShopFlow@123"
+      ACCEPT_EULA: "Y"
+    ports:
+      - "1435:1433"
+    networks:
+      - shopflow-network
+    healthcheck:
+      test: ["CMD-SHELL",
+           "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P ShopFlow@123 -Q 'SELECT 1' -No || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  sqlserver-payment:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: shopflow-sqlserver-payment
+    environment:
+      SA_PASSWORD: "ShopFlow@123"
+      ACCEPT_EULA: "Y"
+    ports:
+      - "1436:1433"
+    networks:
+      - shopflow-network
+    healthcheck:
+      test: ["CMD-SHELL",
+           "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P ShopFlow@123 -Q 'SELECT 1' -No || exit 1"]
+      timeout: 5s
+      retries: 10
+
+  sqlserver-notification:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: shopflow-sqlserver-notification
+    environment:
+      SA_PASSWORD: "ShopFlow@123"
+      ACCEPT_EULA: "Y"
+    ports:
+      - "1437:1433"
+    networks:
+      - shopflow-network
+    healthcheck:
+      test: ["CMD-SHELL",
+           "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P ShopFlow@123 -Q 'SELECT 1' -No || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  # ── Services ───────────────────────────────────────────
+  order-service:
+    build:
+      context: .
+      dockerfile: src/Services/ShopFlow.OrderService/ShopFlow.OrderService.API/Dockerfile
+    container_name: shopflow-order-service
+    ports:
+      - "5001:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Docker
+      - ConnectionStrings__DefaultConnection=Server=sqlserver-orders,1433;Database=ShopFlowOrderDb;User Id=sa;Password=ShopFlow@123;TrustServerCertificate=True
+      - RabbitMQ__Host=rabbitmq
+      - RabbitMQ__Username=guest
+      - RabbitMQ__Password=guest
+    depends_on:
+      sqlserver-orders:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - shopflow-network
+
+  inventory-service:
+    build:
+      context: .
+      dockerfile: src/Services/ShopFlow.InventoryService/ShopFlow.InventoryService.API/Dockerfile
+    container_name: shopflow-inventory-service
+    ports:
+      - "5002:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Docker
+      - ConnectionStrings__DefaultConnection=Server=sqlserver-inventory,1433;Database=ShopFlowInventoryDb;User Id=sa;Password=ShopFlow@123;TrustServerCertificate=True
+      - RabbitMQ__Host=rabbitmq
+      - RabbitMQ__Username=guest
+      - RabbitMQ__Password=guest
+    depends_on:
+      sqlserver-inventory:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - shopflow-network
+
+  payment-service:
+    build:
+      context: .
+      dockerfile: src/Services/ShopFlow.PaymentService/ShopFlow.PaymentService.API/Dockerfile
+    container_name: shopflow-payment-service
+    ports:
+      - "5003:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Docker
+      - ConnectionStrings__DefaultConnection=Server=sqlserver-payment,1433;Database=ShopFlowPaymentDb;User Id=sa;Password=ShopFlow@123;TrustServerCertificate=True
+      - RabbitMQ__Host=rabbitmq
+      - RabbitMQ__Username=guest
+      - RabbitMQ__Password=guest
+    depends_on:
+      sqlserver-payment:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - shopflow-network
+
+  notification-service:
+    build:
+      context: .
+      dockerfile: src/Services/ShopFlow.NotificationService/ShopFlow.NotificationService.API/Dockerfile
+    container_name: shopflow-notification-service
+    ports:
+      - "5004:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Docker
+      - ConnectionStrings__DefaultConnection=Server=sqlserver-notification,1433;Database=ShopFlowNotificationDb;User Id=sa;Password=ShopFlow@123;TrustServerCertificate=True
+      - RabbitMQ__Host=rabbitmq
+      - RabbitMQ__Username=guest
+      - RabbitMQ__Password=guest
+    depends_on:
+      sqlserver-notification:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - shopflow-network
+
+networks:
+  shopflow-network:
+    driver: bridge

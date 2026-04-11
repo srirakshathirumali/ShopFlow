@@ -37,4 +37,7 @@
     <Project Path="tests/ShopFlow.OrderService.Tests/ShopFlow.OrderService.Tests.csproj" />
     <Project Path="tests/ShopFlow.PaymentService.Tests/ShopFlow.PaymentService.Tests.csproj" />
   </Folder>
+  <Project Path="docker-compose.dcproj">
+    <Build />
+  </Project>
 </Solution>

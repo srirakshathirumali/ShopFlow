@@ -1,0 +1,14 @@
+{
+  "profiles": {
+    "Docker Compose": {
+      "commandName": "DockerCompose",
+      "commandVersion": "1.0",
+      "serviceActions": {
+        "shopflow.paymentservice.api": "StartDebugging",
+        "shopflow.orderservice.api": "StartDebugging",
+        "shopflow.notificationservice.api": "StartDebugging",
+        "shopflow.inventoryservice.api": "StartDebugging"
+      }
+    }
+  }
+}

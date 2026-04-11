@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  order-service:
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Docker
+
+  inventory-service:
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Docker
+
+  payment-service:
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Docker
+
+  notification-service:
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Docker
