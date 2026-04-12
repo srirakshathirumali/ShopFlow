@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using MassTransit;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using ShopFlow.OrderService.Domain.Interfaces;
@@ -19,6 +20,19 @@ public static class DependencyInjection
 
         services.AddScoped<IOrderRepository, OrderRepository>();
         services.AddScoped<IOutboxRepository, OutboxRepository>();
+
+        // MassTransit — publisher only
+        services.AddMassTransit(x =>
+        {
+            x.UsingRabbitMq((ctx, cfg) =>
+            {
+                cfg.Host(configuration["RabbitMQ:Host"], "/", h =>
+                {
+                    h.Username(configuration["RabbitMQ:Username"]!);
+                    h.Password(configuration["RabbitMQ:Password"]!);
+                });
+            });
+        });
 
         return services;
     }

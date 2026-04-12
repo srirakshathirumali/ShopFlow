@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using MassTransit;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using ShopFlow.NotificationService.Domain.Interfaces;
@@ -18,6 +19,27 @@ public static class DependencyInjection
                     "ShopFlow.NotificationService.Infrastructure")));
 
         services.AddScoped<INotificationRepository, NotificationRepository>();
+
+        // MassTransit with consumers
+        services.AddMassTransit(x =>
+        {
+            x.AddConsumer<OrderPlacedConsumer>();
+            x.AddConsumer<InventoryReservedConsumer>();
+            x.AddConsumer<PaymentProcessedConsumer>();
+            x.AddConsumer<PaymentFailedConsumer>();
+            x.AddConsumer<OrderCancelledConsumer>();
+
+            x.UsingRabbitMq((ctx, cfg) =>
+            {
+                cfg.Host(configuration["RabbitMQ:Host"], "/", h =>
+                {
+                    h.Username(configuration["RabbitMQ:Username"]!);
+                    h.Password(configuration["RabbitMQ:Password"]!);
+                });
+
+                cfg.ConfigureEndpoints(ctx);
+            });
+        });
 
         return services;
     }
