@@ -51,6 +51,11 @@ if (app.Environment.IsDevelopment() || app.Environment.IsEnvironment("Docker"))
         options.Title = "ShopFlow PaymentService";
     });
 }
+if (app.Environment.IsEnvironment("Docker"))
+{
+    // Give RabbitMQ extra time to be fully ready
+    await Task.Delay(TimeSpan.FromSeconds(5));
+}
 app.UseMiddleware<GlobalExceptionMiddleware>();
 app.UseHttpsRedirection();
 app.UseAuthorization();

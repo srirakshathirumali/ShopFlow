@@ -35,9 +35,34 @@ public static class DependencyInjection
                 {
                     h.Username(configuration["RabbitMQ:Username"]!);
                     h.Password(configuration["RabbitMQ:Password"]!);
+                    // Retry connection if RabbitMQ not ready
+                    h.RequestedConnectionTimeout(TimeSpan.FromSeconds(10));
                 });
 
-                cfg.ConfigureEndpoints(ctx);
+                cfg.ReceiveEndpoint("shopflow-notification-order-placed", e =>
+                {
+                    e.ConfigureConsumer<OrderPlacedConsumer>(ctx);
+                });
+
+                cfg.ReceiveEndpoint("shopflow-notification-inventory-reserved", e =>
+                {
+                    e.ConfigureConsumer<InventoryReservedConsumer>(ctx);
+                });
+
+                cfg.ReceiveEndpoint("shopflow-notification-payment-processed", e =>
+                {
+                    e.ConfigureConsumer<PaymentProcessedConsumer>(ctx);
+                });
+
+                cfg.ReceiveEndpoint("shopflow-notification-payment-failed", e =>
+                {
+                    e.ConfigureConsumer<PaymentFailedConsumer>(ctx);
+                });
+
+                cfg.ReceiveEndpoint("shopflow-notification-order-cancelled", e =>
+                {
+                    e.ConfigureConsumer<OrderCancelledConsumer>(ctx);
+                });
             });
         });
 

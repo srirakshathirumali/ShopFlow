@@ -32,9 +32,14 @@ public static class DependencyInjection
                 {
                     h.Username(configuration["RabbitMQ:Username"]!);
                     h.Password(configuration["RabbitMQ:Password"]!);
+                    // Retry connection if RabbitMQ not ready
+                    h.RequestedConnectionTimeout(TimeSpan.FromSeconds(10));
                 });
 
-                cfg.ConfigureEndpoints(ctx);
+                cfg.ReceiveEndpoint("shopflow-payment-inventory-reserved", e =>
+                {
+                    e.ConfigureConsumer<InventoryReservedConsumer>(ctx);
+                });
             });
         });
 

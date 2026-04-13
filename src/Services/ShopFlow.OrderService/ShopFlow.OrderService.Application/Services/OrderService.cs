@@ -1,4 +1,5 @@
-﻿using ShopFlow.OrderService.Application.DTOs;
+﻿using ShopFlow.Contracts.Events;
+using ShopFlow.OrderService.Application.DTOs;
 using ShopFlow.OrderService.Application.Interfaces;
 using ShopFlow.OrderService.Domain.Entities;
 using ShopFlow.OrderService.Domain.Enums;
@@ -10,10 +11,12 @@ namespace ShopFlow.OrderService.Application.Services;
 public class OrderService : IOrderService
 {
     private readonly IOrderRepository _orderRepository;
+    private readonly IEventPublisher _eventPublisher;
 
-    public OrderService(IOrderRepository orderRepository)
+    public OrderService(IOrderRepository orderRepository, IEventPublisher eventPublisher)
     {
         _orderRepository = orderRepository;
+        _eventPublisher = eventPublisher;
     }
 
     public async Task<OrderResponseDto> CreateOrderAsync(CreateOrderRequestDto request)
@@ -34,6 +37,21 @@ public class OrderService : IOrderService
         };
 
         await _orderRepository.AddAsync(order);
+        // This must be here
+        await _eventPublisher.PublishAsync(new OrderPlaced
+        {
+            OrderId = order.Id,
+            CustomerId = order.CustomerId,
+            TotalAmount = order.TotalAmount,
+            PlacedAt = DateTime.UtcNow,
+            Items = order.OrderLines.Select(l => new OrderItem
+            {
+                ProductId = l.ProductId,
+                ProductName = l.ProductName,
+                Quantity = l.Quantity,
+                UnitPrice = l.UnitPrice
+            }).ToList()
+        });
         return MapToDto(order);
     }
 
@@ -81,7 +99,30 @@ public class OrderService : IOrderService
         order.CancellationReason = reason;
 
         await _orderRepository.UpdateAsync(order);
+        // Add these logs
+        Console.WriteLine($"About to publish OrderCancelled for {orderId}");
+
+        await _eventPublisher.PublishAsync(new OrderCancelled
+        {
+            OrderId = order.Id,
+            Reason = reason,
+            CancelledAt = DateTime.UtcNow
+        });
+
+        Console.WriteLine($"Published OrderCancelled for {orderId}");
+
         return MapToDto(order);
+    }
+    public async Task UpdateOrderStatusAsync(Guid orderId, string status)
+    {
+        var order = await _orderRepository.GetByIdAsync(orderId)
+            ?? throw new OrderNotFoundException(orderId);
+
+        if (Enum.TryParse<OrderStatus>(status, out var orderStatus))
+        {
+            order.Status = orderStatus;
+            await _orderRepository.UpdateAsync(order);
+        }
     }
 
     private static OrderResponseDto MapToDto(Order order) =>

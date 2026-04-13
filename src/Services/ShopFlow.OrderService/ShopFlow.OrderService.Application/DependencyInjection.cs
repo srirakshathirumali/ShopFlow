@@ -2,6 +2,7 @@
 using FluentValidation.AspNetCore;
 using Microsoft.Extensions.DependencyInjection;
 using ShopFlow.OrderService.Application.Interfaces;
+using ShopFlow.OrderService.Application.Services;
 using ShopFlow.OrderService.Application.Validators;
 
 namespace ShopFlow.OrderService.Application;
@@ -11,6 +12,7 @@ public static class DependencyInjection
     public static IServiceCollection AddApplication(this IServiceCollection services)
     {
         services.AddScoped<IOrderService,Services.OrderService>();
+        services.AddScoped<IOrderEventHandler, OrderEventHandler>();
 
         services.AddFluentValidationAutoValidation();
         services.AddValidatorsFromAssemblyContaining<CreateOrderRequestValidator>();
