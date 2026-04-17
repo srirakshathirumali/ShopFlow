@@ -2,8 +2,10 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using ShopFlow.InventoryService.Application.Interfaces;
 using ShopFlow.InventoryService.Domain.Interfaces;
 using ShopFlow.InventoryService.Infrastructure.Consumers;
+using ShopFlow.InventoryService.Infrastructure.Messaging;
 using ShopFlow.InventoryService.Infrastructure.Persistence;
 using ShopFlow.InventoryService.Infrastructure.Persistence.Repositories;
 
@@ -21,6 +23,7 @@ public static class DependencyInjection
 
         services.AddScoped<IProductRepository, ProductRepository>();
         services.AddScoped<IStockReservationRepository, StockReservationRepository>();
+        services.AddScoped<IEventPublisher, EventPublisher>();
 
         // MassTransit with consumers
         services.AddMassTransit(x =>

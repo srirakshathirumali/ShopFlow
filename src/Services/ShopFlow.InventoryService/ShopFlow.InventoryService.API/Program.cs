@@ -28,6 +28,7 @@ using (var scope = app.Services.CreateScope())
             var db = scope.ServiceProvider
                 .GetRequiredService<InventoryDbContext>();
             db.Database.Migrate();
+            await DataSeeder.SeedAsync(db);
             break;
         }
         catch (Exception ex)
