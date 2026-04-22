@@ -11,6 +11,7 @@ public static class DependencyInjection
         services.AddScoped<INotificationService,Services.NotificationService>();
         services.AddScoped<INotificationEventHandler, NotificationEventHandler>();
 
+
         return services;
     }
 }

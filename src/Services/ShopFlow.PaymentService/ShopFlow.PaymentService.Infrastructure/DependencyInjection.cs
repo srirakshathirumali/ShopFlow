@@ -2,8 +2,10 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using ShopFlow.PaymentService.Application.Interfaces;
 using ShopFlow.PaymentService.Domain.Interfaces;
 using ShopFlow.PaymentService.Infrastructure.Consumers;
+using ShopFlow.PaymentService.Infrastructure.Messaging;
 using ShopFlow.PaymentService.Infrastructure.Persistence;
 using ShopFlow.PaymentService.Infrastructure.Persistence.Repositories;
 
@@ -20,7 +22,7 @@ public static class DependencyInjection
                     "ShopFlow.PaymentService.Infrastructure")));
 
         services.AddScoped<IPaymentRepository, PaymentRepository>();
-
+        services.AddScoped<IEventPublisher, EventPublisher>();
         // MassTransit with consumers
         services.AddMassTransit(x =>
         {
