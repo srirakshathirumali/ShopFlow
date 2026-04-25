@@ -10,5 +10,6 @@ namespace ShopFlow.OrderService.Domain.Interfaces
         Task AddAsync(OutboxMessage message);
         Task<IEnumerable<OutboxMessage>> GetUnprocessedAsync();
         Task MarkAsProcessedAsync(Guid messageId);
+        Task IncrementRetryCountAsync(Guid messageId);
     }
 }

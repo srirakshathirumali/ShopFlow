@@ -36,4 +36,13 @@ public class OutboxRepository : IOutboxRepository
         message.ProcessedAt = DateTime.UtcNow;
         await _context.SaveChangesAsync();
     }
+
+    public async Task IncrementRetryCountAsync(Guid messageId)
+    {
+        var message = await _context.OutboxMessages.FindAsync(messageId);
+        if (message is null) return;
+
+        message.RetryCount++;
+        await _context.SaveChangesAsync();
+    }
 }

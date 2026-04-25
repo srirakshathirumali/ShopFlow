@@ -5,18 +5,19 @@ using ShopFlow.OrderService.Domain.Entities;
 using ShopFlow.OrderService.Domain.Enums;
 using ShopFlow.OrderService.Domain.Exceptions;
 using ShopFlow.OrderService.Domain.Interfaces;
+using System.Text.Json;
 
 namespace ShopFlow.OrderService.Application.Services;
 
 public class OrderService : IOrderService
 {
     private readonly IOrderRepository _orderRepository;
-    private readonly IEventPublisher _eventPublisher;
-
-    public OrderService(IOrderRepository orderRepository, IEventPublisher eventPublisher)
+    private readonly IOutboxRepository _outboxRepository;
+    
+    public OrderService(IOrderRepository orderRepository, IOutboxRepository outboxRepository)
     {
         _orderRepository = orderRepository;
-        _eventPublisher = eventPublisher;
+        _outboxRepository = outboxRepository;
     }
 
     public async Task<OrderResponseDto> CreateOrderAsync(CreateOrderRequestDto request)
@@ -37,8 +38,9 @@ public class OrderService : IOrderService
         };
 
         await _orderRepository.AddAsync(order);
-        // This must be here
-        await _eventPublisher.PublishAsync(new OrderPlaced
+
+        // Build event before saving
+        var orderPlacedEvent = new OrderPlaced
         {
             OrderId = order.Id,
             CustomerId = order.CustomerId,
@@ -51,7 +53,17 @@ public class OrderService : IOrderService
                 Quantity = l.Quantity,
                 UnitPrice = l.UnitPrice
             }).ToList()
+        };
+
+        // Save event to Outbox — atomically with the order
+        await _outboxRepository.AddAsync(new OutboxMessage
+        {
+            EventType = typeof(OrderPlaced).FullName!,
+            Payload = JsonSerializer.Serialize(orderPlacedEvent),
+            IsProcessed = false,
+            RetryCount = 0
         });
+
         return MapToDto(order);
     }
 
@@ -99,17 +111,22 @@ public class OrderService : IOrderService
         order.CancellationReason = reason;
 
         await _orderRepository.UpdateAsync(order);
-        // Add these logs
-        Console.WriteLine($"About to publish OrderCancelled for {orderId}");
-
-        await _eventPublisher.PublishAsync(new OrderCancelled
+       
+        // Save OrderCancelled to Outbox
+        var cancelledEvent = new OrderCancelled
         {
             OrderId = order.Id,
             Reason = reason,
             CancelledAt = DateTime.UtcNow
-        });
+        };
 
-        Console.WriteLine($"Published OrderCancelled for {orderId}");
+        await _outboxRepository.AddAsync(new OutboxMessage
+        {
+            EventType = typeof(OrderCancelled).FullName!,
+            Payload = JsonSerializer.Serialize(cancelledEvent),
+            IsProcessed = false,
+            RetryCount = 0
+        });
 
         return MapToDto(order);
     }

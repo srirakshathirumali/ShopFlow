@@ -4,6 +4,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using ShopFlow.OrderService.Application.Interfaces;
 using ShopFlow.OrderService.Domain.Interfaces;
+using ShopFlow.OrderService.Infrastructure.BackgroundServices;
 using ShopFlow.OrderService.Infrastructure.Consumers;
 using ShopFlow.OrderService.Infrastructure.Messaging;
 using ShopFlow.OrderService.Infrastructure.Persistence;
@@ -26,6 +27,9 @@ public static class DependencyInjection
 
         // Event publisher
         services.AddScoped<IEventPublisher, EventPublisher>();
+
+        // Outbox background processor
+        services.AddHostedService<OutboxProcessor>();
 
         // MassTransit — publisher only
         services.AddMassTransit(x =>
