@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Scalar.AspNetCore;
 using ShopFlow.NotificationService.Application;
 using ShopFlow.NotificationService.Infrastructure;
+using ShopFlow.NotificationService.Infrastructure.Hubs;
 using ShopFlow.NotificationService.Infrastructure.Persistence;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -10,6 +11,7 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddOpenApi();
 builder.Services.AddInfrastructure(builder.Configuration);
+builder.Services.AddSignalR();
 builder.Services.AddApplication();
 var app = builder.Build();
 
@@ -54,7 +56,12 @@ if (app.Environment.IsEnvironment("Docker"))
     // Give RabbitMQ extra time to be fully ready
     await Task.Delay(TimeSpan.FromSeconds(5));
 }
-app.UseHttpsRedirection();
+if (!app.Environment.IsEnvironment("Docker"))
+    app.UseHttpsRedirection();
+
 app.UseAuthorization();
+app.UseStaticFiles();
 app.MapControllers();
+// Map the hub — same line, different namespace
+app.MapHub<NotificationHub>("/hubs/notifications");
 app.Run();

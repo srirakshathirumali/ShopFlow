@@ -2,9 +2,11 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using ShopFlow.NotificationService.Application.Interfaces;
 using ShopFlow.NotificationService.Domain.Interfaces;
 using ShopFlow.NotificationService.Infrastructure.Persistence;
 using ShopFlow.NotificationService.Infrastructure.Persistence.Repositories;
+using ShopFlow.NotificationService.Infrastructure.Services;
 
 namespace ShopFlow.NotificationService.Infrastructure;
 
@@ -19,6 +21,8 @@ public static class DependencyInjection
                     "ShopFlow.NotificationService.Infrastructure")));
 
         services.AddScoped<INotificationRepository, NotificationRepository>();
+
+        services.AddScoped<INotificationHubService, NotificationHubService>();
 
         // MassTransit with consumers
         services.AddMassTransit(x =>

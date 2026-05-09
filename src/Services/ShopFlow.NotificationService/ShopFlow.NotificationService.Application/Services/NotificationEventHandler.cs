@@ -1,6 +1,9 @@
 ﻿using Microsoft.Extensions.Logging;
 using ShopFlow.Contracts.Events;
 using ShopFlow.NotificationService.Application.Interfaces;
+using ShopFlow.NotificationService.Domain.Entities;
+using ShopFlow.NotificationService.Domain.Enums;
+using ShopFlow.NotificationService.Domain.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -9,39 +12,72 @@ namespace ShopFlow.NotificationService.Application.Services
 {
     public class NotificationEventHandler : INotificationEventHandler
     {
+        private readonly INotificationRepository _notificationRepository;
+        private readonly INotificationHubService _hubService;
         private readonly ILogger<NotificationEventHandler> _logger;
-        public NotificationEventHandler(ILogger<NotificationEventHandler> logger)
+        public NotificationEventHandler(ILogger<NotificationEventHandler> logger, INotificationRepository notificationRepository, INotificationHubService notificationHubService)
         {
             _logger = logger;
+            _notificationRepository = notificationRepository;
+            _hubService= notificationHubService;
         }
-        public Task HandleInventoryReservedAsync(InventoryReserved inventoryReserved)
+        public async Task HandleInventoryReservedAsync(InventoryReserved inventoryReserved)
         {
-            _logger.LogInformation("Inventory reserved for OrderId:{OrderId}", inventoryReserved.OrderId);
-            return Task.CompletedTask;
+            const string message = "Items reserved. Processing payment...";
+
+            await SaveAndPushAsync(inventoryReserved.OrderId,Guid.Empty,NotificationType.InventoryReserved,message);
         }
 
-        public Task HandleOrderCancelledAsync(OrderCancelled orderCancelled)
+        public async Task HandleOrderCancelledAsync(OrderCancelled orderCancelled)
         {
-            _logger.LogInformation("Order cancelled for OrderId:{OrderId}", orderCancelled.OrderId);
-            return Task.CompletedTask;
+            var message = $"Order cancelled: {orderCancelled.Reason}";
+
+            await SaveAndPushAsync(orderCancelled.OrderId,Guid.Empty,NotificationType.OrderCancelled,message);
         }
 
-        public Task HandleOrderPlacedAsync(OrderPlaced orderPlaced)
+        public async Task HandleOrderPlacedAsync(OrderPlaced orderPlaced)
         {
-            _logger.LogInformation("Order placed for OrderId:{OrderId}", orderPlaced.OrderId);
-            return Task.CompletedTask;
+            const string message = "Your order has been placed successfully.";
+
+            await SaveAndPushAsync(orderPlaced.OrderId,orderPlaced.CustomerId,NotificationType.OrderPlaced,message);
         }
 
-        public Task HandlePaymentFailedAsync(PaymentFailed paymentFailed)
+        public async Task HandlePaymentFailedAsync(PaymentFailed paymentFailed)
         {
-            _logger.LogInformation("Payment failed for OrderId:{OrderId}", paymentFailed.OrderId);
-            return Task.CompletedTask;
+            var message =$"Payment failed: {paymentFailed.Reason}. Order cancelled.";
+
+            await SaveAndPushAsync(paymentFailed.OrderId, Guid.Empty, NotificationType.PaymentFailed, message);
         }
 
-        public Task HandlePaymentProcessedAsync(PaymentProcessed paymentProcessed)
+        public async Task HandlePaymentProcessedAsync(PaymentProcessed paymentProcessed)
         {
-            _logger.LogInformation("Payment processed for OrderId:{OrderId}", paymentProcessed.OrderId);
-            return Task.CompletedTask;
+            const string message = "Payment successful. Your order is confirmed!";
+
+            await SaveAndPushAsync(paymentProcessed.OrderId,Guid.Empty, NotificationType.PaymentProcessed,message);
+        }
+
+        private async Task SaveAndPushAsync(Guid orderId,Guid customerId,NotificationType type,string message)
+        {
+            _logger.LogInformation("Notification — OrderId: {OrderId} Type: {Type} Message: {Message}",orderId, type, message);
+
+            // Save to database
+            var notification = new Notification
+            {
+                OrderId = orderId,
+                CustomerId = customerId,
+                Type = type,
+                Message = message,
+                IsSent = false
+            };
+
+            await _notificationRepository.AddAsync(notification);
+
+            // Push via SignalR to all clients watching this order
+            await _hubService.SendOrderUpdateAsync(orderId.ToString(),type.ToString(),message);
+
+            // Mark as sent
+            notification.IsSent = true;
+            notification.SentAt = DateTime.UtcNow;
         }
     }
 }

@@ -17,7 +17,7 @@ public class NotificationsController : ControllerBase
 
     /// <summary>Gets all notifications for an order.</summary>
     [HttpGet("order/{orderId:guid}")]
-    [ProducesResponseType(typeof(IEnumerable<NotificationResponseDto>),StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(IEnumerable<NotificationResponseDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetNotificationsByOrder(Guid orderId)
     {
         var result = await _notificationService

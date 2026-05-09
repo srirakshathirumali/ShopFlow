@@ -15,7 +15,7 @@ namespace ShopFlow.OrderService.Infrastructure.BackgroundServices
     {
         private readonly IServiceProvider _serviceProvider;
         private readonly ILogger<OutboxProcessor> _logger;
-        private readonly TimeSpan _interval = TimeSpan.FromSeconds(5);
+        private readonly TimeSpan _interval = TimeSpan.FromSeconds(30);
 
         public OutboxProcessor(IServiceProvider serviceProvider, ILogger<OutboxProcessor> logger)
         {

@@ -23,6 +23,8 @@ namespace ShopFlow.PaymentService.Application.Services
         }
         public async Task HandleInventoryReservedAsync(InventoryReserved inventoryReserved)
         {
+            
+
             _logger.LogInformation("InventoryReserved for OrderId:{OrderId}", inventoryReserved.OrderId);
 
             var existing = await _paymentRepository.GetByOrderIdAsync(inventoryReserved.OrderId);

@@ -1,0 +1,121 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <title>ShopFlow Notifications</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.0/signalr.min.js"></script>
+    <style>
+        body {
+            font-family: Arial;
+            max-width: 600px;
+            margin: 40px auto;
+            padding: 0 20px;
+        }
+
+        #messages {
+            border: 1px solid #ccc;
+            padding: 10px;
+            height: 300px;
+            overflow-y: auto;
+            margin-top: 10px;
+        }
+
+        .msg {
+            padding: 6px;
+            margin: 4px 0;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .OrderPlaced {
+            background: #e8f5e9;
+        }
+
+        .InventoryReserved {
+            background: #e3f2fd;
+        }
+
+        .PaymentProcessed {
+            background: #f3e5f5;
+        }
+
+        .PaymentFailed {
+            background: #ffebee;
+        }
+
+        .OrderCancelled {
+            background: #ffebee;
+        }
+
+        input {
+            padding: 8px;
+            width: 300px;
+        }
+
+        button {
+            padding: 8px 16px;
+            margin-left: 8px;
+            cursor: pointer;
+        }
+
+        #connectionStatus {
+            color: gray;
+            font-size: 13px;
+        }
+    </style>
+</head>
+<body>
+    <h2>🛒 ShopFlow — Real-Time Order Notifications</h2>
+    <p id="connectionStatus">Connecting...</p>
+
+    <div>
+        <input type="text" id="orderId" placeholder="Paste order ID here" />
+        <button onclick="watchOrder()">Watch Order</button>
+    </div>
+
+    <div id="messages"></div>
+
+    <script>
+        const connection = new signalR.HubConnectionBuilder()
+            .withUrl("http://localhost:5004/hubs/notifications")
+            .withAutomaticReconnect()
+            .build();
+
+        connection.on("Connected", msg => {
+            document.getElementById("connectionStatus").textContent = "✅ " + msg;
+            document.getElementById("connectionStatus").style.color = "green";
+        });
+
+        connection.on("JoinedGroup", msg => {
+            addMessage("System", msg, "system");
+        });
+
+        connection.on("OrderStatusUpdated", data => {
+            addMessage(data.status, data.message, data.status);
+        });
+
+        function addMessage(type, message, cssClass) {
+            const div = document.createElement("div");
+            div.className = `msg ${cssClass}`;
+            div.innerHTML = `<strong>${type}</strong> — ${message}
+                <em style="color:#999; font-size:12px">
+                    ${new Date().toLocaleTimeString()}
+                </em>`;
+            document.getElementById("messages").prepend(div);
+        }
+
+        async function watchOrder() {
+            const orderId = document.getElementById("orderId").value.trim();
+            if (!orderId) { alert("Enter an order ID"); return; }
+            await connection.invoke("JoinOrderGroup", orderId);
+            addMessage("Watching", `Now watching order: ${orderId}`, "system");
+        }
+
+        connection.start()
+            .then(() => console.log("SignalR connected"))
+            .catch(err => {
+                document.getElementById("connectionStatus")
+                    .textContent = "❌ Connection failed: " + err;
+            });
+    </script>
+</body>
+</html>
