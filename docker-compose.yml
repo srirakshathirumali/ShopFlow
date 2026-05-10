@@ -1,4 +1,4 @@
-﻿version: '3.8'
+version: '3.8'
 
 services:
 
@@ -171,6 +171,24 @@ services:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
+    networks:
+      - shopflow-network
+
+ # ── Add this block ──────────────────────────────────────
+  api-gateway:
+    build:
+      context: .
+      dockerfile: src/Gateway/ShopFlow.ApiGateway/Dockerfile
+    container_name: shopflow-api-gateway
+    ports:
+      - "5000:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Docker
+    depends_on:
+      - order-service
+      - inventory-service
+      - payment-service
+      - notification-service
     networks:
       - shopflow-network
 

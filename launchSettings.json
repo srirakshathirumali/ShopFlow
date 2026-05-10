@@ -7,7 +7,8 @@
         "shopflow.paymentservice.api": "StartDebugging",
         "shopflow.orderservice.api": "StartDebugging",
         "shopflow.notificationservice.api": "StartDebugging",
-        "shopflow.inventoryservice.api": "StartDebugging"
+        "shopflow.inventoryservice.api": "StartDebugging",
+        "shopflow.apigateway": "StartDebugging"
       }
     }
   }
