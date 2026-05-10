@@ -15,80 +15,77 @@ namespace ShopFlow.PaymentService.Application.Services
         private readonly ILogger<PaymentEventHandler> _logger;
         private readonly IPaymentRepository _paymentRepository;
         private readonly IEventPublisher _eventPublisher;
-        public PaymentEventHandler(ILogger<PaymentEventHandler> logger, IPaymentRepository paymentRepository, IEventPublisher eventPublisher)
+        private readonly IPaymentGateway _paymentGateway;
+
+        public PaymentEventHandler(ILogger<PaymentEventHandler> logger, IPaymentRepository paymentRepository, IEventPublisher eventPublisher, IPaymentGateway paymentGateway)
         {
             _logger = logger;
             _eventPublisher = eventPublisher;
             _paymentRepository = paymentRepository;
+            _paymentGateway = paymentGateway;
         }
         public async Task HandleInventoryReservedAsync(InventoryReserved inventoryReserved)
         {
-            
+
 
             _logger.LogInformation("InventoryReserved for OrderId:{OrderId}", inventoryReserved.OrderId);
 
             var existing = await _paymentRepository.GetByOrderIdAsync(inventoryReserved.OrderId);
 
-            if(existing is not null)
+            if (existing is not null)
             {
                 _logger.LogInformation("Payment already processed for Order Id:{0}", inventoryReserved.OrderId);
                 return;
             }
-
-            try
+            PaymentGatewayResponse gatewayResponse;
+           
+                // Call payment gateway through Circuit Breaker
+                gatewayResponse = await _paymentGateway.ProcessAsync(
+                    new PaymentGatewayRequest
+                    {
+                        OrderId = inventoryReserved.OrderId,
+                        Amount = 999.99m  // real amount would come from order
+                    });
+            
+            var payment = new Payment
             {
-                var paymentResult = await SimulatePaymentGatewayAsync(inventoryReserved.OrderId);
+                OrderId = inventoryReserved.OrderId,
+                Amount = 999.99m,
+                Status = gatewayResponse.IsSuccess
+                               ? PaymentStatus.Processed
+                               : PaymentStatus.Failed,
+                FailureReason = gatewayResponse.FailureReason,
+                ProcessedAt = DateTime.UtcNow
+            };
 
-                var payment = new Payment
+            await _paymentRepository.AddAsync(payment);
+
+            if (gatewayResponse.IsSuccess)
+            {
+                _logger.LogInformation("Payment successfull for Order Id:{0}", inventoryReserved.OrderId);
+
+                await _eventPublisher.PublishAsync(new PaymentProcessed
                 {
                     OrderId = inventoryReserved.OrderId,
-                    Amount = paymentResult.Amount,
-                    Status = paymentResult.IsSuccess
-                                  ? PaymentStatus.Processed
-                                  : PaymentStatus.Failed,
-                    FailureReason = paymentResult.IsSuccess
-                                  ? null
-                                  : paymentResult.FailureReason,
+                    PaymentId = payment.Id,
+                    Amount = payment.Amount,
                     ProcessedAt = DateTime.UtcNow
-                };
-
-                await _paymentRepository.AddAsync(payment);
-
-                if(paymentResult.IsSuccess)
-                {
-                    _logger.LogInformation("Payment successfull for Order Id:{0}", inventoryReserved.OrderId);
-
-                    await _eventPublisher.PublishAsync(new PaymentProcessed
-                    {
-                        OrderId = inventoryReserved.OrderId,
-                        PaymentId = payment.Id,
-                        Amount = payment.Amount,
-                        ProcessedAt = DateTime.UtcNow
-                    });
-                }
-                else
-                {
-                    _logger.LogInformation("Payment failed for Order Id:{0} Reason:{1}", inventoryReserved.OrderId,paymentResult.FailureReason);
-
-                    await _eventPublisher.PublishAsync(new PaymentFailed
-                    {
-                        OrderId = inventoryReserved.OrderId,
-                        Reason = paymentResult.FailureReason,
-                        FailedAt = DateTime.UtcNow
-                    });
-                }
+                });
             }
-            catch(Exception ex)
+            else
             {
-                _logger.LogError(ex, "Unexpected error occured while processing payment for Order Id{0}", inventoryReserved.OrderId);
+                _logger.LogInformation("Payment failed for Order Id:{0} Reason:{1}", inventoryReserved.OrderId, gatewayResponse.FailureReason);
+
                 await _eventPublisher.PublishAsync(new PaymentFailed
                 {
                     OrderId = inventoryReserved.OrderId,
-                    Reason = "Unexpected payment processing error.",
+                    Reason = gatewayResponse.FailureReason ?? "Payment Failed",
                     FailedAt = DateTime.UtcNow
                 });
             }
         }
+           
+        
 
 
         private static Task<PaymentGatewayResult> SimulatePaymentGatewayAsync( Guid orderId)

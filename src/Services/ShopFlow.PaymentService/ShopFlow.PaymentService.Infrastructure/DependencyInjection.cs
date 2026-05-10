@@ -2,12 +2,15 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using ShopFlow.PaymentService.Application.Interfaces;
 using ShopFlow.PaymentService.Domain.Interfaces;
 using ShopFlow.PaymentService.Infrastructure.Consumers;
+using ShopFlow.PaymentService.Infrastructure.ExternalServices;
 using ShopFlow.PaymentService.Infrastructure.Messaging;
 using ShopFlow.PaymentService.Infrastructure.Persistence;
 using ShopFlow.PaymentService.Infrastructure.Persistence.Repositories;
+using ShopFlow.PaymentService.Infrastructure.Resilience;
 
 namespace ShopFlow.PaymentService.Infrastructure;
 
@@ -23,6 +26,16 @@ public static class DependencyInjection
 
         services.AddScoped<IPaymentRepository, PaymentRepository>();
         services.AddScoped<IEventPublisher, EventPublisher>();
+
+        // Inner gateway — transient is fine
+        services.AddTransient<PaymentGateway>();
+
+        // Resilient gateway — singleton to preserve circuit state
+        services.AddSingleton<IPaymentGateway>(sp =>
+            new ResilientPaymentGateway(
+                sp,    // ← pass IServiceProvider not PaymentGateway
+                sp.GetRequiredService<ILogger<ResilientPaymentGateway>>()));
+
         // MassTransit with consumers
         services.AddMassTransit(x =>
         {
