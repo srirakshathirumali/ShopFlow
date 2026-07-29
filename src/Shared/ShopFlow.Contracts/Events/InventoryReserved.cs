@@ -4,6 +4,7 @@ public record InventoryReserved
 {
     public Guid OrderId { get; init; }
     public List<ReservedItem> Items { get; init; } = new();
+    public decimal TotalAmount { get; init; }
     public DateTime ReservedAt { get; init; }
 }
 

@@ -35,9 +35,19 @@ public class InventoryEventHandler : IInventoryEventHandler
 
         try
         {
-            var reservations = new List<StockReservation>();
+            var existingReservations = await _reservationRepository.GetByOrderIdAsync(orderPlaced.OrderId);
 
-            // Check and reserve stock for each item
+            if (existingReservations.Any())
+            {
+                _logger.LogInformation(
+                    "Stock already reserved for OrderId: {OrderId} — skipping duplicate OrderPlaced delivery.",
+                    orderPlaced.OrderId);
+                return;
+            }
+
+            var itemsWithProducts = new List<(OrderItem Item, Product Product)>();
+
+            // Pass 1 — validate every item before reserving anything
             foreach (var item in orderPlaced.Items)
             {
                 var product = await _productRepository
@@ -59,7 +69,14 @@ public class InventoryEventHandler : IInventoryEventHandler
                     return;
                 }
 
-                // Reserve the stock
+                itemsWithProducts.Add((item, product));
+            }
+
+            // Pass 2 — all items validated, safe to reserve
+            var reservations = new List<StockReservation>();
+
+            foreach (var (item, product) in itemsWithProducts)
+            {
                 product.ReservedQuantity += item.Quantity;
                 await _productRepository.UpdateAsync(product);
 
@@ -80,6 +97,7 @@ public class InventoryEventHandler : IInventoryEventHandler
             {
                 OrderId = orderPlaced.OrderId,
                 ReservedAt = DateTime.UtcNow,
+                TotalAmount = orderPlaced.TotalAmount,
                 Items = reservations.Select(r => new ReservedItem
                 {
                     ProductId = r.ProductId,

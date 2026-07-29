@@ -38,19 +38,19 @@ namespace ShopFlow.PaymentService.Application.Services
                 return;
             }
             PaymentGatewayResponse gatewayResponse;
-           
+
                 // Call payment gateway through Circuit Breaker
                 gatewayResponse = await _paymentGateway.ProcessAsync(
                     new PaymentGatewayRequest
                     {
                         OrderId = inventoryReserved.OrderId,
-                        Amount = 999.99m  // real amount would come from order
+                        Amount = inventoryReserved.TotalAmount
                     });
-            
+
             var payment = new Payment
             {
                 OrderId = inventoryReserved.OrderId,
-                Amount = 999.99m,
+                Amount = inventoryReserved.TotalAmount,
                 Status = gatewayResponse.IsSuccess
                                ? PaymentStatus.Processed
                                : PaymentStatus.Failed,
@@ -84,38 +84,5 @@ namespace ShopFlow.PaymentService.Application.Services
                 });
             }
         }
-           
-        
-
-
-        private static Task<PaymentGatewayResult> SimulatePaymentGatewayAsync( Guid orderId)
-        {
-            // Simulate 80% success rate
-            // In production replace with real gateway call
-            var random = new Random();
-            var isSuccess = random.Next(1, 11) <= 8;
-           // var isSuccess = false;
-
-            var result = new PaymentGatewayResult
-            {
-                IsSuccess = isSuccess,
-                Amount = random.Next(100, 5000),
-                FailureReason = isSuccess
-                                    ? null
-                                    : "Card declined by issuing bank."
-            };
-
-            return Task.FromResult(result);
-        }
     }
-
-    public class PaymentGatewayResult
-    {
-        public bool IsSuccess { get; set; }
-        public decimal Amount { get; set; }
-        public string? FailureReason { get; set; }
-    }
-
 }
-
-

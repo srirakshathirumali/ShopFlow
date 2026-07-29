@@ -28,7 +28,7 @@ public class PaymentEventHandlerTests
             _paymentGatewayMock.Object);
     }
 
-    private static InventoryReserved BuildInventoryReserved(Guid? orderId = null) =>
+    private static InventoryReserved BuildInventoryReserved(Guid? orderId = null, decimal totalAmount = 149.97m) =>
         new()
         {
             OrderId = orderId ?? Guid.NewGuid(),
@@ -36,13 +36,14 @@ public class PaymentEventHandlerTests
             {
                 new() { ProductId = Guid.NewGuid(), Quantity = 2 }
             },
+            TotalAmount = totalAmount,
             ReservedAt = DateTime.UtcNow
         };
 
     [Fact]
     public async Task HandleInventoryReservedAsync_WhenGatewaySucceeds_PublishesPaymentProcessed()
     {
-        var inventoryReserved = BuildInventoryReserved();
+        var inventoryReserved = BuildInventoryReserved(totalAmount: 149.97m);
         _paymentRepositoryMock.Setup(r => r.GetByOrderIdAsync(inventoryReserved.OrderId)).ReturnsAsync((Payment?)null);
         _paymentGatewayMock
             .Setup(g => g.ProcessAsync(It.IsAny<PaymentGatewayRequest>()))
@@ -51,9 +52,25 @@ public class PaymentEventHandlerTests
         await _sut.HandleInventoryReservedAsync(inventoryReserved);
 
         _eventPublisherMock.Verify(p => p.PublishAsync(
-            It.Is<PaymentProcessed>(e => e.OrderId == inventoryReserved.OrderId && e.Amount == 999.99m),
+            It.Is<PaymentProcessed>(e => e.OrderId == inventoryReserved.OrderId && e.Amount == 149.97m),
             It.IsAny<CancellationToken>()), Times.Once);
         _eventPublisherMock.Verify(p => p.PublishAsync(It.IsAny<PaymentFailed>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task HandleInventoryReservedAsync_CallsGatewayWithOrderTotalAmount()
+    {
+        var inventoryReserved = BuildInventoryReserved(totalAmount: 273.50m);
+        _paymentRepositoryMock.Setup(r => r.GetByOrderIdAsync(inventoryReserved.OrderId)).ReturnsAsync((Payment?)null);
+        _paymentGatewayMock
+            .Setup(g => g.ProcessAsync(It.IsAny<PaymentGatewayRequest>()))
+            .ReturnsAsync(new PaymentGatewayResponse { IsSuccess = true, TransactionId = "txn-amount" });
+
+        await _sut.HandleInventoryReservedAsync(inventoryReserved);
+
+        _paymentGatewayMock.Verify(g => g.ProcessAsync(
+            It.Is<PaymentGatewayRequest>(r => r.OrderId == inventoryReserved.OrderId && r.Amount == 273.50m)),
+            Times.Once);
     }
 
     [Fact]
@@ -91,7 +108,7 @@ public class PaymentEventHandlerTests
     [Fact]
     public async Task HandleInventoryReservedAsync_SavesPaymentToRepositoryWithGatewayOutcome()
     {
-        var inventoryReserved = BuildInventoryReserved();
+        var inventoryReserved = BuildInventoryReserved(totalAmount: 149.97m);
         _paymentRepositoryMock.Setup(r => r.GetByOrderIdAsync(inventoryReserved.OrderId)).ReturnsAsync((Payment?)null);
         _paymentGatewayMock
             .Setup(g => g.ProcessAsync(It.IsAny<PaymentGatewayRequest>()))
@@ -108,7 +125,7 @@ public class PaymentEventHandlerTests
         _paymentRepositoryMock.Verify(r => r.AddAsync(It.IsAny<Payment>()), Times.Once);
         capturedPayment.Should().NotBeNull();
         capturedPayment!.OrderId.Should().Be(inventoryReserved.OrderId);
-        capturedPayment.Amount.Should().Be(999.99m);
+        capturedPayment.Amount.Should().Be(149.97m);
         capturedPayment.Status.Should().Be(PaymentStatus.Processed);
         capturedPayment.ProcessedAt.Should().NotBeNull();
     }

@@ -69,6 +69,14 @@ namespace ShopFlow.OrderService.Infrastructure.BackgroundServices
                     _logger.LogError(ex,"Failed to publish outbox message: {Id} RetryCount: {RetryCount}",message.Id, message.RetryCount);
 
                     await outboxRepository.IncrementRetryCountAsync(message.Id);
+
+                    if (message.RetryCount >= 4)  // about to become 5
+                    {
+                        _logger.LogError(
+                            "Outbox message {Id} exceeded max retries — permanently failed. " +
+                            "EventType: {EventType}",
+                            message.Id, message.EventType);
+                    }
                 }
             }
 

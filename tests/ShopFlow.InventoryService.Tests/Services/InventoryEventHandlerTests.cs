@@ -126,6 +126,7 @@ public class InventoryEventHandlerTests
         published.Should().NotBeNull();
         published!.OrderId.Should().Be(orderId);
         published.Items.Should().ContainSingle(i => i.ProductId == product.Id && i.Quantity == 4);
+        published.TotalAmount.Should().Be(orderPlaced.TotalAmount);
 
         _eventPublisherMock.Verify(p => p.PublishAsync(It.IsAny<InventoryReservationFailed>(), It.IsAny<CancellationToken>()), Times.Never);
     }
@@ -157,6 +158,62 @@ public class InventoryEventHandlerTests
         _productRepositoryMock.Verify(r => r.UpdateAsync(It.IsAny<Product>()), Times.Never);
         _reservationRepositoryMock.Verify(r => r.AddRangeAsync(It.IsAny<IEnumerable<StockReservation>>()), Times.Never);
         _eventPublisherMock.Verify(p => p.PublishAsync(It.IsAny<InventoryReserved>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task HandleOrderPlacedAsync_WhenLaterItemFailsStockCheck_DoesNotReserveEarlierItems()
+    {
+        var orderId = Guid.NewGuid();
+        var okProduct = BuildProduct(stockQuantity: 10, reservedQuantity: 0, name: "Widget");
+        var shortProduct = BuildProduct(stockQuantity: 5, reservedQuantity: 3, name: "Gadget"); // available = 2
+        var item1 = BuildOrderItem(okProduct.Id, 3, "Widget");
+        var item2 = BuildOrderItem(shortProduct.Id, 10, "Gadget");
+        var orderPlaced = BuildOrderPlaced(orderId, item1, item2);
+
+        _productRepositoryMock.Setup(r => r.GetByIdAsync(okProduct.Id)).ReturnsAsync(okProduct);
+        _productRepositoryMock.Setup(r => r.GetByIdAsync(shortProduct.Id)).ReturnsAsync(shortProduct);
+
+        InventoryReservationFailed? published = null;
+        _eventPublisherMock
+            .Setup(p => p.PublishAsync(It.IsAny<InventoryReservationFailed>(), It.IsAny<CancellationToken>()))
+            .Callback<InventoryReservationFailed, CancellationToken>((e, _) => published = e)
+            .Returns(Task.CompletedTask);
+
+        await _sut.HandleOrderPlacedAsync(orderPlaced);
+
+        published.Should().NotBeNull();
+        published!.OrderId.Should().Be(orderId);
+        published.Reason.Should().Contain("Gadget");
+
+        // The earlier, valid item must not have been reserved once a later item fails validation.
+        okProduct.ReservedQuantity.Should().Be(0);
+        shortProduct.ReservedQuantity.Should().Be(3);
+
+        _productRepositoryMock.Verify(r => r.UpdateAsync(It.IsAny<Product>()), Times.Never);
+        _reservationRepositoryMock.Verify(r => r.AddRangeAsync(It.IsAny<IEnumerable<StockReservation>>()), Times.Never);
+        _eventPublisherMock.Verify(p => p.PublishAsync(It.IsAny<InventoryReserved>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    // ---------- HandleOrderPlacedAsync: idempotency ----------
+
+    [Fact]
+    public async Task HandleOrderPlacedAsync_WhenReservationsAlreadyExistForOrder_SkipsProcessing()
+    {
+        var orderId = Guid.NewGuid();
+        var product = BuildProduct(stockQuantity: 10, reservedQuantity: 3);
+        var item = BuildOrderItem(product.Id, 3);
+        var orderPlaced = BuildOrderPlaced(orderId, item);
+        var existingReservation = BuildReservation(orderId, product.Id, 3, ReservationStatus.Active);
+
+        _reservationRepositoryMock.Setup(r => r.GetByOrderIdAsync(orderId)).ReturnsAsync(new[] { existingReservation });
+
+        await _sut.HandleOrderPlacedAsync(orderPlaced);
+
+        _productRepositoryMock.Verify(r => r.GetByIdAsync(It.IsAny<Guid>()), Times.Never);
+        _productRepositoryMock.Verify(r => r.UpdateAsync(It.IsAny<Product>()), Times.Never);
+        _reservationRepositoryMock.Verify(r => r.AddRangeAsync(It.IsAny<IEnumerable<StockReservation>>()), Times.Never);
+        _eventPublisherMock.Verify(p => p.PublishAsync(It.IsAny<InventoryReserved>(), It.IsAny<CancellationToken>()), Times.Never);
+        _eventPublisherMock.Verify(p => p.PublishAsync(It.IsAny<InventoryReservationFailed>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     // ---------- HandleOrderPlacedAsync: product not found ----------

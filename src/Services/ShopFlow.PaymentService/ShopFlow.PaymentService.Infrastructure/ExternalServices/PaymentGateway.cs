@@ -19,8 +19,8 @@ public class PaymentGateway : IPaymentGateway
 
         _logger.LogInformation(
             "PaymentGateway.ProcessAsync called — OrderId: {OrderId} " +
-            "CallCount: {Count}",
-            request.OrderId, _callCount);
+            "Amount: {Amount} CallCount: {Count}",
+            request.OrderId, request.Amount, _callCount);
 
         await Task.Delay(TimeSpan.FromMilliseconds(200));
 
