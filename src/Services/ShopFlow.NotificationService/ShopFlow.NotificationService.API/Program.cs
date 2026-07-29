@@ -53,7 +53,7 @@ using (var scope = app.Services.CreateScope())
             if (retries >= maxRetries)
                 throw;
 
-            Thread.Sleep(TimeSpan.FromSeconds(5));
+            await Task.Delay(TimeSpan.FromSeconds(5));
         }
     }
 }

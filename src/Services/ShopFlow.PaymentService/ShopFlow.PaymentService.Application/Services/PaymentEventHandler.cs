@@ -34,7 +34,7 @@ namespace ShopFlow.PaymentService.Application.Services
 
             if (existing is not null)
             {
-                _logger.LogInformation("Payment already processed for Order Id:{0}", inventoryReserved.OrderId);
+                _logger.LogInformation("Payment already processed for OrderId: {OrderId}", inventoryReserved.OrderId);
                 return;
             }
             PaymentGatewayResponse gatewayResponse;
@@ -62,7 +62,7 @@ namespace ShopFlow.PaymentService.Application.Services
 
             if (gatewayResponse.IsSuccess)
             {
-                _logger.LogInformation("Payment successfull for Order Id:{0}", inventoryReserved.OrderId);
+                _logger.LogInformation("Payment successful for OrderId: {OrderId}", inventoryReserved.OrderId);
 
                 await _eventPublisher.PublishAsync(new PaymentProcessed
                 {
@@ -74,7 +74,7 @@ namespace ShopFlow.PaymentService.Application.Services
             }
             else
             {
-                _logger.LogInformation("Payment failed for Order Id:{0} Reason:{1}", inventoryReserved.OrderId, gatewayResponse.FailureReason);
+                _logger.LogInformation("Payment failed for OrderId: {OrderId} Reason: {Reason}", inventoryReserved.OrderId, gatewayResponse.FailureReason);
 
                 await _eventPublisher.PublishAsync(new PaymentFailed
                 {

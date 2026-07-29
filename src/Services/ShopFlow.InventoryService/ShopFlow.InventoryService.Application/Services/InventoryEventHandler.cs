@@ -35,12 +35,11 @@ public class InventoryEventHandler : IInventoryEventHandler
 
         try
         {
-            var existingReservations = await _reservationRepository.GetByOrderIdAsync(orderPlaced.OrderId);
-
-            if (existingReservations.Any())
+            var existing = await _reservationRepository.GetByOrderIdAsync(orderPlaced.OrderId);
+            if (existing.Any())
             {
-                _logger.LogInformation(
-                    "Stock already reserved for OrderId: {OrderId} — skipping duplicate OrderPlaced delivery.",
+                _logger.LogWarning(
+                    "Duplicate OrderPlaced received for OrderId {OrderId} — skipping",
                     orderPlaced.OrderId);
                 return;
             }

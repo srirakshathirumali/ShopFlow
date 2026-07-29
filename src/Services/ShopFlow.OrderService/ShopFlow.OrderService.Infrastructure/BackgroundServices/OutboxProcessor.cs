@@ -24,7 +24,7 @@ namespace ShopFlow.OrderService.Infrastructure.BackgroundServices
         }
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            _logger.LogInformation("Outbox processor atarted");
+            _logger.LogInformation("Outbox processor started");
 
             while (!stoppingToken.IsCancellationRequested)
             {

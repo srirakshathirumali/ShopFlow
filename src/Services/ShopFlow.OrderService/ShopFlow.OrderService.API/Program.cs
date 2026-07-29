@@ -18,7 +18,6 @@ builder.Services.AddHealthChecks()
         builder.Configuration.GetConnectionString("DefaultConnection")!,
         name: "orderdb",
         tags: new[] { "db", "sql" });
-builder.Services.AddApplication();
 
 var app = builder.Build();
 // Auto-apply migrations on startup
@@ -46,7 +45,7 @@ using (var scope = app.Services.CreateScope())
             if (retries >= maxRetries)
                 throw;
 
-            Thread.Sleep(TimeSpan.FromSeconds(5));
+            await Task.Delay(TimeSpan.FromSeconds(5));
         }
     }
 }
