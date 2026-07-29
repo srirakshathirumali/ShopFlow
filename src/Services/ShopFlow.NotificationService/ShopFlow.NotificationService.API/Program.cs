@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Scalar.AspNetCore;
+using ShopFlow.Contracts.HealthChecks;
 using ShopFlow.NotificationService.Application;
 using ShopFlow.NotificationService.Infrastructure;
 using ShopFlow.NotificationService.Infrastructure.Hubs;
@@ -81,22 +82,8 @@ app.MapControllers();
 app.MapHub<NotificationHub>("/hubs/notifications");
 app.MapHealthChecks("/health", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
 {
-    ResponseWriter = async (context, report) =>
-    {
-        context.Response.ContentType = "application/json";
-        var result = new
-        {
-            status = report.Status.ToString(),
-            service = "NotificationService",
-            checks = report.Entries.Select(e => new
-            {
-                name = e.Key,
-                status = e.Value.Status.ToString(),
-                duration = e.Value.Duration.TotalMilliseconds
-            })
-        };
-        await context.Response.WriteAsJsonAsync(result);
-    }
+    ResponseWriter = (ctx, report) =>
+        HealthCheckResponseWriter.WriteResponse(ctx, report, "NotificationService")
 });
 
 app.Run();

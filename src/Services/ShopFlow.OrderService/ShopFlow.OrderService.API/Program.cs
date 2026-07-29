@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Scalar.AspNetCore;
+using ShopFlow.Contracts.HealthChecks;
 using ShopFlow.OrderService.API.Middleware;
 using ShopFlow.OrderService.Application;
 using ShopFlow.OrderService.Infrastructure;
@@ -70,22 +71,8 @@ app.UseAuthorization();
 app.MapControllers();
 app.MapHealthChecks("/health", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
 {
-    ResponseWriter = async (context, report) =>
-    {
-        context.Response.ContentType = "application/json";
-        var result = new
-        {
-            status = report.Status.ToString(),
-            service = "OrderService",
-            checks = report.Entries.Select(e => new
-            {
-                name = e.Key,
-                status = e.Value.Status.ToString(),
-                duration = e.Value.Duration.TotalMilliseconds
-            })
-        };
-        await context.Response.WriteAsJsonAsync(result);
-    }
+    ResponseWriter = (ctx, report) =>
+        HealthCheckResponseWriter.WriteResponse(ctx, report, "OrderService")
 });
 
 app.Run();
