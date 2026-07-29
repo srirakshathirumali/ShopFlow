@@ -18,6 +18,15 @@ builder.Services.AddHealthChecks()
         builder.Configuration.GetConnectionString("DefaultConnection")!,
         name: "notificationdb",
         tags: new[] { "db", "sql" });
+builder.Services.AddCors(options =>
+{
+    options.AddDefaultPolicy(policy =>
+    {
+        policy.AllowAnyOrigin()
+              .AllowAnyMethod()
+              .AllowAnyHeader();
+    });
+});
 var app = builder.Build();
 
 using (var scope = app.Services.CreateScope())
@@ -64,6 +73,7 @@ if (app.Environment.IsEnvironment("Docker"))
 if (!app.Environment.IsEnvironment("Docker"))
     app.UseHttpsRedirection();
 
+app.UseCors();
 app.UseAuthorization();
 app.UseStaticFiles();
 app.MapControllers();
