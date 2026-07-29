@@ -13,6 +13,11 @@ builder.Services.AddOpenApi();
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddSignalR();
 builder.Services.AddApplication();
+builder.Services.AddHealthChecks()
+    .AddSqlServer(
+        builder.Configuration.GetConnectionString("DefaultConnection")!,
+        name: "notificationdb",
+        tags: new[] { "db", "sql" });
 var app = builder.Build();
 
 using (var scope = app.Services.CreateScope())
@@ -64,4 +69,24 @@ app.UseStaticFiles();
 app.MapControllers();
 // Map the hub — same line, different namespace
 app.MapHub<NotificationHub>("/hubs/notifications");
+app.MapHealthChecks("/health", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
+{
+    ResponseWriter = async (context, report) =>
+    {
+        context.Response.ContentType = "application/json";
+        var result = new
+        {
+            status = report.Status.ToString(),
+            service = "NotificationService",
+            checks = report.Entries.Select(e => new
+            {
+                name = e.Key,
+                status = e.Value.Status.ToString(),
+                duration = e.Value.Duration.TotalMilliseconds
+            })
+        };
+        await context.Response.WriteAsJsonAsync(result);
+    }
+});
+
 app.Run();
